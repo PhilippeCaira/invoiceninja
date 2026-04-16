@@ -859,6 +859,11 @@ class LoginController extends BaseController
             $parameters = ['response_type' => 'code', 'redirect_uri' => config('ninja.app_url') . "/auth/microsoft"];
         }
 
+        if ($provider == 'oidc') {
+            $scopes = ['openid', 'email', 'profile'];
+            $parameters = ['redirect_uri' => config('ninja.app_url') . '/auth/oidc'];
+        }
+
         if (request()->hasHeader('X-REACT') || request()->query('react')) {
             /**@var \App\Models\User $user */
             $user = auth()->user();
@@ -868,7 +873,7 @@ class LoginController extends BaseController
         if (request()->has('code')) {
             return $this->handleProviderCallback($provider);
         } else {
-            if (!in_array($provider, ['google', 'microsoft'])) {
+            if (!in_array($provider, ['google', 'microsoft', 'oidc'])) {
                 return abort(400, 'Invalid provider');
             }
 

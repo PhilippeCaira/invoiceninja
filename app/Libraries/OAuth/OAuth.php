@@ -40,6 +40,8 @@ class OAuth
 
     public const SOCIAL_APPLE = 8;
 
+    public const SOCIAL_OIDC = 9;
+
     public $provider_instance;
 
     public $provider_id;
@@ -92,6 +94,8 @@ class OAuth
                 return 'microsoft';
             case self::SOCIAL_APPLE:
                 return 'apple';
+            case self::SOCIAL_OIDC:
+                return 'oidc';
             default:
                 return 'google';
         }
@@ -116,6 +120,8 @@ class OAuth
                 return self::SOCIAL_MICROSOFT;
             case 'apple':
                 return self::SOCIAL_APPLE;
+            case 'oidc':
+                return self::SOCIAL_OIDC;
             default:
                 return self::SOCIAL_GOOGLE;
         }
