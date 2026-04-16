@@ -72,6 +72,13 @@ return [
         'redirect' => env('APPLE_REDIRECT_URI'),
     ],
 
+    'oidc' => [
+        'base_url' => env('OIDC_BASE_URL'),
+        'client_id' => env('OIDC_CLIENT_ID'),
+        'client_secret' => env('OIDC_CLIENT_SECRET'),
+        'redirect' => env('APP_URL') . '/auth/oidc',
+    ],
+
     'ses' => [
         'key' => env('SES_AWS_ACCESS_KEY_ID'),
         'secret' => env('SES_AWS_SECRET_ACCESS_KEY'),
