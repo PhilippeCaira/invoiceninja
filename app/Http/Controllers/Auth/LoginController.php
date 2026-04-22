@@ -923,8 +923,36 @@ class LoginController extends BaseController
             $user->oauth_user_refresh_token = $socialite_user->refreshToken;
             $user->save();
 
+            // Fork OIDC : établir la session Laravel (auth()->login) — sinon
+            // le user est reconnu en DB mais la session n'est pas créée, et
+            // le redirect renvoie sur /login → boucle.
+            auth()->login($user, true);
+        } elseif ($provider === 'oidc') {
+            // Fork OIDC : tenter un rapprochement par email (pas seulement
+            // par oauth_user_id). Utile quand le user a été créé via invite
+            // InvoiceNinja avant son premier login SSO.
+            /** @var \App\Models\User|null $email_user */
+            $email_user = \App\Models\User::where('email', $socialite_user->getEmail())->first();
+            if ($email_user) {
+                nlog('linking existing user by email to oidc');
+                $email_user->update([
+                    'oauth_user_id' => $socialite_user->getId(),
+                    'oauth_provider_id' => $provider,
+                ]);
+                auth()->login($email_user, true);
+                $user = $email_user;
+            } else {
+                nlog('user not found for oauth');
+            }
         } else {
             nlog('user not found for oauth');
+        }
+
+        // Fork OIDC : si session établie, renvoyer sur le dashboard React
+        // (évite la boucle /login → /auth/oidc → /login que provoquait la
+        // route par défaut "/settings/user_details/connect" sans session).
+        if ($provider === 'oidc' && auth()->check()) {
+            return redirect(config('ninja.react_url') . '/#/dashboard');
         }
 
         $redirect_url = '/#/';
