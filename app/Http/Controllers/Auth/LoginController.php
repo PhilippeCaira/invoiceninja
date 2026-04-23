@@ -945,7 +945,15 @@ class LoginController extends BaseController
         if ($provider === 'oidc' && auth()->check()) {
             /** @var \App\Models\User $user */
             $user = auth()->user();
-            $company = $user->company();
+            // $user->company() jette "No Company Found" quand TruthSource
+            // n'est pas initialisé (cas du flow SSO où on n'est pas dans
+            // le contexte d'une request API). Utiliser directement la
+            // relation Many $user->companies->first().
+            $company = $user->companies()->first();
+            if (!$company) {
+                nlog('OIDC SSO: user has no company, redirect to setup');
+                return redirect('/setup');
+            }
             $token_value = \Illuminate\Support\Str::random(64);
             \App\Models\CompanyToken::create([
                 'user_id'    => $user->id,
