@@ -4,6 +4,23 @@
     <!-- Source: https://github.com/invoiceninja/invoiceninja -->
     <!-- Version: {{ config('ninja.app_version') }} -->
   <meta charset="UTF-8">
+  @if(filter_var(env('OIDC_AUTO_REDIRECT', false), FILTER_VALIDATE_BOOLEAN))
+  <script>
+    // Fork OIDC : intercepte les navigations Flutter vers #/login (hash)
+    // ou /login (path) et redirige vers /auth/oidc. Escape hatch ?local=1.
+    (function() {
+      if (location.search.indexOf('local=1') !== -1) return;
+      var redirectToSso = function() {
+        if (location.hash === '#/login' || location.pathname === '/login') {
+          window.location.replace('/auth/oidc');
+        }
+      };
+      window.addEventListener('hashchange', redirectToSso);
+      window.addEventListener('popstate', redirectToSso);
+      redirectToSso();
+    })();
+  </script>
+  @endif
   <title>{{ $white_label ? "" : config('ninja.app_name')  }}</title>
   <meta name="google-signin-client_id" content="{{ config('services.google.client_id') }}">
   <link rel="manifest" href="manifest.json?v={{ config('ninja.app_version') }}">
