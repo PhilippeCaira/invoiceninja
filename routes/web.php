@@ -22,6 +22,19 @@ use Illuminate\Support\Facades\Route;
 
 Route::get('/', [BaseController::class, 'flutterRoute'])->middleware('guest');
 
+// Fork OIDC : server-side auto-redirect /login → /auth/oidc.
+// Flutter peut naviguer vers /login via window.location (vraie requête HTTP),
+// on intercepte avant d'arriver au shell. Escape hatch ?local=1.
+Route::get('/login', function (\Illuminate\Http\Request $request) {
+    if ($request->query('local') === '1') {
+        return redirect('/?local=1');
+    }
+    if (filter_var(env('OIDC_AUTO_REDIRECT', false), FILTER_VALIDATE_BOOLEAN)) {
+        return redirect('/auth/oidc');
+    }
+    return redirect('/');
+})->middleware('guest');
+
 Route::get('setup', [SetupController::class, 'index'])->middleware('guest');
 Route::post('setup', [SetupController::class, 'doSetup'])->middleware('throttle:10,1')->middleware('guest');
 Route::get('update', [SetupController::class, 'update'])->middleware('throttle:10,1')->middleware('guest');
