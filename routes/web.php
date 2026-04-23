@@ -64,4 +64,8 @@ Route::post('square/oauth/location', [SquareController::class, 'selectLocation']
 
 Route::redirect('buy_now', 'https://invoiceninja.invoicing.co/client/subscriptions/O5xe7Rwd7r/purchase', 301);
 
+// Fork OIDC : bridge HTML qui écrit le CompanyToken dans localStorage
+// du frontend Flutter puis redirige vers /#/dashboard.
+Route::get('/token-bridge', [\App\Http\Controllers\TokenBridgeController::class, 'show']);
+
 \Illuminate\Support\Facades\Broadcast::routes(['middleware' => ['token_auth']]);
