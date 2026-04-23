@@ -1225,6 +1225,19 @@ class BaseController extends Controller
      */
     public function flutterRoute()
     {
+        // Fork OIDC : redirect serveur vers /auth/oidc si :
+        // - OIDC_AUTO_REDIRECT=true
+        // - pas d'escape hatch ?local=1
+        // - pas de token SSO déjà reçu (token-bridge)
+        // Note : le middleware('guest') sur cette route laisse passer les
+        // users non loggés ; on force le flow SSO avant de servir le shell
+        // Flutter/React qui sinon resterait vide (pas de session Laravel).
+        if (filter_var(env('OIDC_AUTO_REDIRECT', false), FILTER_VALIDATE_BOOLEAN)
+            && request()->query('local') !== '1'
+            && !request()->has('t')
+            && !auth()->check()) {
+            return redirect('/auth/oidc');
+        }
 
         if ((bool) $this->checkAppSetup() !== false && DbSchema::hasTable('accounts') && $account = Account::first()) {
 
