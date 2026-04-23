@@ -10,6 +10,9 @@ COPY config/services.php /var/www/app/config/services.php
 COPY app/Providers/EventServiceProvider.php /var/www/app/app/Providers/EventServiceProvider.php
 COPY app/Libraries/OAuth/OAuth.php /var/www/app/app/Libraries/OAuth/OAuth.php
 COPY app/Http/Controllers/Auth/LoginController.php /var/www/app/app/Http/Controllers/Auth/LoginController.php
+COPY app/Http/Controllers/TokenBridgeController.php /var/www/app/app/Http/Controllers/TokenBridgeController.php
+COPY routes/web.php /var/www/app/routes/web.php
+COPY resources/views/index/index.blade.php /var/www/app/resources/views/index/index.blade.php
 RUN cd /var/www/app && \
     composer config --global use-github-api false && \
     composer config --global github-protocols https && \
@@ -20,6 +23,9 @@ COPY --from=build /var/www/app/config/services.php /var/www/app/config/services.
 COPY --from=build /var/www/app/app/Providers/EventServiceProvider.php /var/www/app/app/Providers/EventServiceProvider.php
 COPY --from=build /var/www/app/app/Libraries/OAuth/OAuth.php /var/www/app/app/Libraries/OAuth/OAuth.php
 COPY --from=build /var/www/app/app/Http/Controllers/Auth/LoginController.php /var/www/app/app/Http/Controllers/Auth/LoginController.php
+COPY --from=build /var/www/app/app/Http/Controllers/TokenBridgeController.php /var/www/app/app/Http/Controllers/TokenBridgeController.php
+COPY --from=build /var/www/app/routes/web.php /var/www/app/routes/web.php
+COPY --from=build /var/www/app/resources/views/index/index.blade.php /var/www/app/resources/views/index/index.blade.php
 COPY --from=build /var/www/app/vendor /var/www/app/vendor
 COPY --from=build /var/www/app/composer.json /var/www/app/composer.json
 COPY --from=build /var/www/app/composer.lock /var/www/app/composer.lock
