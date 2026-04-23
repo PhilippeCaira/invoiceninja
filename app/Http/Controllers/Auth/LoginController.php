@@ -952,7 +952,21 @@ class LoginController extends BaseController
         // (évite la boucle /login → /auth/oidc → /login que provoquait la
         // route par défaut "/settings/user_details/connect" sans session).
         if ($provider === 'oidc' && auth()->check()) {
-            return redirect(config('ninja.react_url') . '/#/dashboard');
+            /** @var \App\Models\User $user */
+            $user = auth()->user();
+            $company = $user->company();
+            $token_value = \Illuminate\Support\Str::random(64);
+            \App\Models\CompanyToken::create([
+                'user_id'    => $user->id,
+                'company_id' => $company->id,
+                'account_id' => $user->account_id,
+                'name'       => 'OIDC SSO ' . now()->format('Y-m-d H:i:s'),
+                'token'      => $token_value,
+                'is_system'  => false,
+            ]);
+            // Rediriger vers le bridge HTML qui écrit le token dans
+            // localStorage puis navigue vers le dashboard Flutter.
+            return redirect('/token-bridge?t=' . urlencode($token_value));
         }
 
         $redirect_url = '/#/';
