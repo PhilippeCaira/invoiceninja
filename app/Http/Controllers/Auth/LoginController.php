@@ -964,7 +964,10 @@ class LoginController extends BaseController
                 return redirect('/setup');
             }
             $token_value = \Illuminate\Support\Str::random(64);
-            \App\Models\CompanyToken::create([
+            // forceCreate bypasse les guards $fillable du model CompanyToken
+            // qui n'autorise pas user_id/company_id/account_id en mass-assign
+            // (erreur FK silencieuse : les colonnes étaient NULL → insert rejeté).
+            \App\Models\CompanyToken::forceCreate([
                 'user_id'    => $user->id,
                 'company_id' => $company->id,
                 'account_id' => $user->account_id,
