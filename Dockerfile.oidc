@@ -1,9 +1,22 @@
-# Invoice Ninja + OIDC via Laravel Socialite
-# Stage 1 : installer le package OIDC (git nécessaire pour composer)
-# Stage 2 : image finale propre sans outils de build
+# Invoice Ninja + OIDC via Laravel Socialite + Flutter shell patché (token-bridge)
+# Stage 0 : build du bundle Flutter web depuis le fork PhilippeCaira/admin-portal
+# Stage 1 : composer + patches PHP
+# Stage 2 : image finale = upstream + patches PHP + bundle Flutter rebuilt
 ARG INVOICENINJA_VERSION=5.13
-FROM invoiceninja/invoiceninja:${INVOICENINJA_VERSION} AS build
+ARG ADMIN_PORTAL_REF=oidc
 
+# ─── Stage 0 : Flutter web build ──────────────────────────────────────────
+FROM ghcr.io/cirruslabs/flutter:3.35.4 AS flutter-build
+WORKDIR /app
+RUN git config --global --add safe.directory /app && \
+    git clone --depth 1 --branch ${ADMIN_PORTAL_REF} \
+    https://github.com/PhilippeCaira/admin-portal.git . && \
+    flutter config --enable-web --no-analytics && \
+    flutter pub get && \
+    flutter build web --release --no-tree-shake-icons --pwa-strategy=none
+
+# ─── Stage 1 : composer install + patches PHP ─────────────────────────────
+FROM invoiceninja/invoiceninja:${INVOICENINJA_VERSION} AS build
 USER root
 RUN apk add --no-cache git
 COPY config/services.php /var/www/app/config/services.php
@@ -20,6 +33,7 @@ RUN cd /var/www/app && \
     composer config --global github-protocols https && \
     composer require kovah/laravel-socialite-oidc --no-interaction --no-scripts --prefer-dist -W
 
+# ─── Stage 2 : image finale ───────────────────────────────────────────────
 FROM invoiceninja/invoiceninja:${INVOICENINJA_VERSION} AS invoiceninja-oidc
 COPY --from=build /var/www/app/config/services.php /var/www/app/config/services.php
 COPY --from=build /var/www/app/app/Providers/EventServiceProvider.php /var/www/app/app/Providers/EventServiceProvider.php
@@ -33,3 +47,12 @@ COPY --from=build /var/www/app/resources/views/react/index.blade.php /var/www/ap
 COPY --from=build /var/www/app/vendor /var/www/app/vendor
 COPY --from=build /var/www/app/composer.json /var/www/app/composer.json
 COPY --from=build /var/www/app/composer.lock /var/www/app/composer.lock
+
+# Bundle Flutter patché : remplace le main.foss.dart.js upstream
+# Le patch admin-portal lit `localStorage['X-NINJA-TOKEN']` au boot et
+# appelle /api/v1/refresh pour hydrater AppState — bypass du login form.
+COPY --from=flutter-build /app/build/web/main.dart.js /var/www/app/public/main.foss.dart.js
+COPY --from=flutter-build /app/build/web/main.dart.js /var/www/app/public/main.dart.js
+COPY --from=flutter-build /app/build/web/flutter_service_worker.js /var/www/app/public/flutter_service_worker.js
+COPY --from=flutter-build /app/build/web/assets /var/www/app/public/assets
+COPY --from=flutter-build /app/build/web/canvaskit /var/www/app/public/canvaskit
