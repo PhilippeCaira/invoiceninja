@@ -6,11 +6,17 @@
   <meta charset="UTF-8">
   @if(filter_var(env('OIDC_AUTO_REDIRECT', false), FILTER_VALIDATE_BOOLEAN))
   <script>
-    // Fork OIDC : intercepte les navigations Flutter vers #/login (hash)
-    // ou /login (path) et redirige vers /auth/oidc. Escape hatch ?local=1.
+    // Fork OIDC : intercepte les navigations Flutter vers #/login ou /login
+    // et redirige vers /auth/oidc. Escape hatch ?local=1.
+    // Si X-NINJA-TOKEN est en localStorage (déposé par token-bridge), on
+    // laisse Flutter consommer le token via _trySsoBootstrap (sinon boucle
+    // infinie : Flutter affiche login → script redirige /auth/oidc → nouveau
+    // token → boucle). Le token est consommé+supprimé après hydratation.
     (function() {
       if (location.search.indexOf('local=1') !== -1) return;
+      try { if (localStorage.getItem('X-NINJA-TOKEN')) return; } catch (e) {}
       var redirectToSso = function() {
+        try { if (localStorage.getItem('X-NINJA-TOKEN')) return; } catch (e) {}
         if (location.hash === '#/login' || location.pathname === '/login') {
           window.location.replace('/auth/oidc');
         }
