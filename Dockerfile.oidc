@@ -7,12 +7,14 @@ ARG ADMIN_PORTAL_REF=oidc
 
 # ─── Stage 0 : Flutter web build ──────────────────────────────────────────
 FROM ghcr.io/cirruslabs/flutter:3.35.4 AS flutter-build
+ARG ADMIN_PORTAL_REF=oidc
 USER root
 WORKDIR /src
 RUN git clone --depth 1 --branch ${ADMIN_PORTAL_REF} \
         https://github.com/PhilippeCaira/admin-portal.git /src/admin-portal
 WORKDIR /src/admin-portal
 RUN git config --global --add safe.directory /src/admin-portal && \
+    cp lib/.env.dart.example lib/.env.dart && \
     flutter config --enable-web --no-analytics && \
     flutter pub get && \
     flutter build web --release --no-tree-shake-icons --pwa-strategy=none
