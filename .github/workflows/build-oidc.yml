@@ -6,6 +6,8 @@ on:
   schedule:
     - cron: "0 5 * * 1"
   workflow_dispatch:
+  repository_dispatch:
+    types: [admin-portal-updated]
 
 env:
   REGISTRY: ghcr.io
