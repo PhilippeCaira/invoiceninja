@@ -1229,12 +1229,13 @@ class BaseController extends Controller
         // - OIDC_AUTO_REDIRECT=true
         // - pas d'escape hatch ?local=1
         // - pas de token SSO déjà reçu (token-bridge)
-        // Note : le middleware('guest') sur cette route laisse passer les
-        // users non loggés ; on force le flow SSO avant de servir le shell
-        // Flutter/React qui sinon resterait vide (pas de session Laravel).
+        // - pas de cookie sso_in_progress (Flutter en train d'hydrater le
+        //   token déposé par TokenBridgeController — éviter la boucle)
+        // - pas de session Laravel
         if (filter_var(env('OIDC_AUTO_REDIRECT', false), FILTER_VALIDATE_BOOLEAN)
             && request()->query('local') !== '1'
             && !request()->has('t')
+            && !request()->cookie('sso_in_progress')
             && !auth()->check()) {
             return redirect('/auth/oidc');
         }

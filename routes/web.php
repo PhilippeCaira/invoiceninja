@@ -25,7 +25,12 @@ Route::get('/', [BaseController::class, 'flutterRoute'])->middleware('guest');
 // Flutter peut naviguer vers /login via window.location (vraie requête HTTP),
 // on intercepte avant d'arriver au shell. Escape hatch ?local=1.
 Route::get('/login', function (\Illuminate\Http\Request $request) {
-    if ($request->query('local') === '1') {
+    // Escape hatches : ne PAS rediriger vers /auth/oidc dans 2 cas :
+    //   1. ?local=1 explicite (debug ou flag manuel)
+    //   2. cookie sso_in_progress (TokenBridgeController vient de set un
+    //      X-NINJA-TOKEN, Flutter est en train de l'hydrater) → sinon
+    //      boucle infinie si Flutter naviguer vers /login pendant boot.
+    if ($request->query('local') === '1' || $request->cookie('sso_in_progress')) {
         return redirect('/?local=1');
     }
     if (filter_var(env('OIDC_AUTO_REDIRECT', false), FILTER_VALIDATE_BOOLEAN)) {
