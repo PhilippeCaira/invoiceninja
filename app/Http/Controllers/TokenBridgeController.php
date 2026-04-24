@@ -6,15 +6,15 @@ class TokenBridgeController extends Controller
 {
     /**
      * Fork OIDC : route-bridge qui reçoit un token CompanyToken en
-     * querystring et l'injecte dans localStorage du frontend Flutter
-     * avant de naviguer vers le dashboard. Utilisé uniquement dans le
-     * flow SSO du fork pour contourner le fait que Flutter ignore la
-     * session Laravel et lit uniquement localStorage.access_token.
+     * querystring, dépose un X-NINJA-TOKEN dans le localStorage Flutter
+     * et set un cookie `sso_in_progress` (1 minute) pour bloquer la
+     * boucle infinie /login → /auth/oidc → /token-bridge → /login pendant
+     * que le bundle Flutter consomme le token via _trySsoBootstrap.
+     * Utilise `?local=1` dans le redirect pour skip flutterRoute SSO check.
      */
     public function show()
     {
         $token = request()->query('t', '');
-        // Validation : token doit être 64 chars alphanumériques
         if (!preg_match('/^[a-zA-Z0-9]{64}$/', $token)) {
             return redirect('/login');
         }
@@ -32,11 +32,11 @@ class TokenBridgeController extends Controller
     localStorage.setItem('X-NINJA-TOKEN', '{$safe}');
     localStorage.setItem('access_token', '{$safe}');
   } catch (e) {}
-  window.location.replace('/#/dashboard');
+  window.location.replace('/?local=1#/dashboard');
 </script>
-<noscript>Enable JavaScript to continue, or go to <a href="/#/dashboard">the dashboard</a>.</noscript>
+<noscript>Enable JavaScript to continue, or go to <a href="/?local=1#/dashboard">the dashboard</a>.</noscript>
 </body>
 </html>
-HTML);
+HTML)->cookie('sso_in_progress', '1', 1, '/', null, true, true);
     }
 }
