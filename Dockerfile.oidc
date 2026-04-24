@@ -7,10 +7,11 @@ ARG ADMIN_PORTAL_REF=oidc
 
 # ─── Stage 0 : Flutter web build ──────────────────────────────────────────
 FROM ghcr.io/cirruslabs/flutter:3.35.4 AS flutter-build
-WORKDIR /app
-RUN git config --global --add safe.directory /app && \
-    git clone --depth 1 --branch ${ADMIN_PORTAL_REF} \
-    https://github.com/PhilippeCaira/admin-portal.git . && \
+USER root
+WORKDIR /build
+RUN git clone --depth 1 --branch ${ADMIN_PORTAL_REF} \
+    https://github.com/PhilippeCaira/admin-portal.git /build && \
+    git config --global --add safe.directory /build && \
     flutter config --enable-web --no-analytics && \
     flutter pub get && \
     flutter build web --release --no-tree-shake-icons --pwa-strategy=none
@@ -51,8 +52,8 @@ COPY --from=build /var/www/app/composer.lock /var/www/app/composer.lock
 # Bundle Flutter patché : remplace le main.foss.dart.js upstream
 # Le patch admin-portal lit `localStorage['X-NINJA-TOKEN']` au boot et
 # appelle /api/v1/refresh pour hydrater AppState — bypass du login form.
-COPY --from=flutter-build /app/build/web/main.dart.js /var/www/app/public/main.foss.dart.js
-COPY --from=flutter-build /app/build/web/main.dart.js /var/www/app/public/main.dart.js
-COPY --from=flutter-build /app/build/web/flutter_service_worker.js /var/www/app/public/flutter_service_worker.js
-COPY --from=flutter-build /app/build/web/assets /var/www/app/public/assets
-COPY --from=flutter-build /app/build/web/canvaskit /var/www/app/public/canvaskit
+COPY --from=flutter-build /build/build/web/main.dart.js /var/www/app/public/main.foss.dart.js
+COPY --from=flutter-build /build/build/web/main.dart.js /var/www/app/public/main.dart.js
+COPY --from=flutter-build /build/build/web/flutter_service_worker.js /var/www/app/public/flutter_service_worker.js
+COPY --from=flutter-build /build/build/web/assets /var/www/app/public/assets
+COPY --from=flutter-build /build/build/web/canvaskit /var/www/app/public/canvaskit
